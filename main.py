@@ -23,6 +23,8 @@ class Dashboard:
         self.wid_pad_y = 3
         self.pady_1 = 10
         self.padx_1 = 5
+        self.img_width = 300
+        self.img_height = 200
 
         self.root = root
         self.root.configure(bg=self.bg_color)
@@ -105,7 +107,11 @@ class Dashboard:
 
     def create_image(self):
         self.image_frame = tk.Frame(
-            self.middle_frame, width=300, height=200, bg=self.bg_color, bd=0
+            self.middle_frame,
+            width=self.img_width,
+            height=self.img_height,
+            bg=self.bg_color,
+            bd=0,
         )
 
         self.image_label = tk.Label(
@@ -209,7 +215,7 @@ class Dashboard:
 
     def log(self, message):
         """Log messages to the console."""
-        print(message) # noqa
+        print(message)  # noqa
 
     def read_noun_list(self):
         """Read the noun list from file."""
@@ -311,10 +317,10 @@ class Dashboard:
 
             # Handle initial loading where frame dimensions might be zero
             if frame_width <= 1:
-                frame_width = 300
+                frame_width = img_width
 
             if frame_height <= 1:
-                frame_height = 200
+                frame_height = img_height
 
             # Calculate aspect ratios
             image_aspect = img_width / img_height
