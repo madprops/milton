@@ -2,14 +2,16 @@ import os
 import time
 import random
 import threading
+import json
 import tkinter as tk
+from typing import Any
 from pathlib import Path
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk  # type: ignore
 from tkinter import ttk, filedialog
 
 
 class Dashboard:
-    def __init__(self, root):
+    def __init__(self, root: tk.Tk) -> None:
         self.rd_off = 999
         self.rd_fast = 1
         self.rd_normal = 5
@@ -25,6 +27,7 @@ class Dashboard:
         self.padx_1 = 5
         self.img_width = 300
         self.img_height = 200
+        self.stop_refresh = False
 
         self.root = root
         self.root.configure(bg=self.bg_color)
@@ -41,21 +44,21 @@ class Dashboard:
 
         self.current_image = None
         self.image_directory = "/home/yo/pics"
-        self.image_list = []
+        self.image_list: list[Path] = []
         self.supported_formats = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff")
 
         self.start()
 
-    def start(self):
+    def start(self) -> None:
         self.scan_for_images()
         self.root.after(100, self.refresh)
         self.start_refresh_thread()
 
-    def start_refresh_thread(self):
+    def start_refresh_thread(self) -> None:
         self.refresh_thd = threading.Thread(target=self.refresh_thread, daemon=True)
         self.refresh_thd.start()
 
-    def create_main(self):
+    def create_main(self) -> None:
         self.main_frame = tk.Frame(root, bg=self.bg_color)
 
         self.top_frame = tk.Frame(self.main_frame, bg=self.bg_color)
@@ -70,7 +73,7 @@ class Dashboard:
         self.main_frame.pack(fill="both", expand=True)
         self.main_frame.pack_propagate(False)
 
-    def create_top(self):
+    def create_top(self) -> None:
         labels = tk.Frame(self.top_frame, bg=self.bg_color, pady=3)
         labels.pack(expand=True)
 
@@ -105,7 +108,7 @@ class Dashboard:
         self.label_2.pack(side=tk.LEFT, padx=self.padx_1)
         self.label_3.pack(side=tk.LEFT, padx=self.padx_1)
 
-    def create_image(self):
+    def create_image(self) -> None:
         self.image_frame = tk.Frame(
             self.middle_frame,
             width=self.img_width,
@@ -121,7 +124,7 @@ class Dashboard:
         self.image_label.pack(fill="both", expand=True)
         self.image_frame.pack(padx=10, pady=(0, 0), fill="both", expand=True)
 
-    def create_bottom(self):
+    def create_bottom(self) -> None:
         combo_style = ttk.Style()
 
         combo_style.configure(
@@ -209,15 +212,15 @@ class Dashboard:
         self.refresh_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=self.pady_1)
 
-    def close(self):
+    def close(self) -> None:
         """Close the application."""
         self.root.quit()
 
-    def log(self, message):
+    def log(self, message: str) -> None:
         """Log messages to the console."""
         print(message)  # noqa
 
-    def read_noun_list(self):
+    def read_noun_list(self) -> list[str]:
         """Read the noun list from file."""
         try:
             with Path("nouns.txt").open("r", encoding="utf-8") as f:
@@ -226,7 +229,7 @@ class Dashboard:
             self.log(f"Error reading nouns.txt: {e}")
             return ["Error", "Loading", "Words"]
 
-    def select_words(self):
+    def select_words(self) -> None:
         """Update all three labels with random words."""
         try:
             if len(self.noun_list) >= 3:
@@ -240,7 +243,7 @@ class Dashboard:
         except Exception as e:
             self.log(f"Error updating labels: {e}")
 
-    def refresh_thread(self):
+    def refresh_thread(self) -> None:
         """Thread function to update labels every x minutes."""
         while not self.stop_refresh:
             time.sleep(self.refresh_delay * 60)
@@ -248,7 +251,7 @@ class Dashboard:
             if not self.stop_refresh:  # Check again after the sleep
                 self.root.after(0, self.refresh)
 
-    def select_directory(self):
+    def select_directory(self) -> None:
         directory = filedialog.askdirectory(title="Select Image Directory")
 
         if directory:
@@ -256,7 +259,7 @@ class Dashboard:
             self.scan_for_images()
             self.refresh()
 
-    def scan_for_images(self):
+    def scan_for_images(self) -> None:
         if not self.image_directory:
             return
 
@@ -267,25 +270,25 @@ class Dashboard:
                 if file.lower().endswith(self.supported_formats):
                     self.image_list.append(Path(root) / file)
 
-    def refresh(self):
+    def refresh(self) -> None:
         self.show_random_image()
         self.select_words()
 
-    def show_random_image(self):
+    def show_random_image(self) -> None:
         if not self.image_list:
             return
 
         random_image_path = random.choice(self.image_list)
         self.load_image(random_image_path)
 
-    def validate_number(self, p):
+    def validate_number(self, p: str) -> bool:
         """Validate input to only allow numbers"""
         if p == "":  # Allow empty field
             return True
 
         return p.isdigit()
 
-    def on_speed_change(self, event=None):
+    def on_speed_change(self, event: Any = None) -> None:
         speed = self.speed_var.get()
 
         if speed == "Off":
@@ -300,7 +303,7 @@ class Dashboard:
         self.restart_refresh_thread()
         self.root.focus_set()
 
-    def restart_refresh_thread(self):
+    def restart_refresh_thread(self) -> None:
         """Restart the refresh thread with the current delay."""
         if self.refresh_thd and self.refresh_thd.is_alive():
             self.stop_refresh = True
@@ -308,7 +311,7 @@ class Dashboard:
         self.stop_refresh = False
         self.start_refresh_thread()
 
-    def load_image(self, file_path):
+    def load_image(self, file_path: Path) -> None:
         try:
             pil_image = Image.open(file_path)
             img_width, img_height = pil_image.size
@@ -353,7 +356,6 @@ class Dashboard:
 
             # Update the image label
             self.image_label.configure(image=tk_image)
-            self.image_label.image = tk_image  # Keep a reference
             self.current_image = tk_image
         except Exception as e:
             self.log(f"Error loading image: {e}")
@@ -364,9 +366,9 @@ if __name__ == "__main__":
 
     if manifest_path.exists():
         with manifest_path.open("r", encoding="utf-8") as f:
-            manifest = f.read()
-
-    root = tk.Tk(className=manifest["program"])
-    app = Dashboard(root)
-    root.configure(bg=app.bg_color)
-    root.mainloop()
+            f_manifest = f.read()
+            manifest = json.loads(f_manifest)
+            root = tk.Tk(className=manifest["program"])
+            app = Dashboard(root)
+            root.configure(bg=app.bg_color)
+            root.mainloop()
