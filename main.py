@@ -3,8 +3,10 @@ import time
 import random
 import threading
 import tkinter as tk
+from pathlib import Path
 from PIL import Image, ImageTk
 from tkinter import ttk, filedialog
+
 
 class Dashboard:
     def __init__(self, root):
@@ -19,6 +21,8 @@ class Dashboard:
         self.font_size_2 = 13
         self.wid_pad_x = 5
         self.wid_pad_y = 3
+        self.pady_1 = 10
+        self.padx_1 = 5
 
         self.root = root
         self.root.configure(bg=self.bg_color)
@@ -53,7 +57,7 @@ class Dashboard:
         self.main_frame = tk.Frame(root, bg=self.bg_color)
 
         self.top_frame = tk.Frame(self.main_frame, bg=self.bg_color)
-        self.top_frame.pack(fill="x", pady=10)  # Increased padding
+        self.top_frame.pack(fill="x", pady=self.pady_1)  # Increased padding
 
         self.middle_frame = tk.Frame(self.main_frame, bg=self.bg_color)
         self.middle_frame.pack(fill="both", expand=True)
@@ -68,38 +72,90 @@ class Dashboard:
         labels = tk.Frame(self.top_frame, bg=self.bg_color, pady=3)
         labels.pack(expand=True)
 
-        self.label_1 = tk.Label(labels, text="---", font=("Arial", self.font_size),
-            height=self.button_height, padx=self.wid_pad_x, pady=self.wid_pad_y)
-        self.label_2 = tk.Label(labels, text="---", font=("Arial", self.font_size),
-            height=self.button_height, padx=self.wid_pad_x, pady=self.wid_pad_y)
-        self.label_3 = tk.Label(labels, text="---", font=("Arial", self.font_size),
-            height=self.button_height, padx=self.wid_pad_x, pady=self.wid_pad_y)
+        self.label_1 = tk.Label(
+            labels,
+            text="---",
+            font=("Arial", self.font_size),
+            height=self.button_height,
+            padx=self.wid_pad_x,
+            pady=self.wid_pad_y,
+        )
 
-        self.label_1.pack(side=tk.LEFT, padx=5)
-        self.label_2.pack(side=tk.LEFT, padx=5)
-        self.label_3.pack(side=tk.LEFT, padx=5)
+        self.label_2 = tk.Label(
+            labels,
+            text="---",
+            font=("Arial", self.font_size),
+            height=self.button_height,
+            padx=self.wid_pad_x,
+            pady=self.wid_pad_y,
+        )
+
+        self.label_3 = tk.Label(
+            labels,
+            text="---",
+            font=("Arial", self.font_size),
+            height=self.button_height,
+            padx=self.wid_pad_x,
+            pady=self.wid_pad_y,
+        )
+
+        self.label_1.pack(side=tk.LEFT, padx=self.padx_1)
+        self.label_2.pack(side=tk.LEFT, padx=self.padx_1)
+        self.label_3.pack(side=tk.LEFT, padx=self.padx_1)
 
     def create_image(self):
-        self.image_frame = tk.Frame(self.middle_frame, width=300, height=200, bg=self.bg_color, bd=0)
-        self.image_label = tk.Label(self.image_frame, anchor="center", bg=self.bg_color, bd=0)
+        self.image_frame = tk.Frame(
+            self.middle_frame, width=300, height=200, bg=self.bg_color, bd=0
+        )
+
+        self.image_label = tk.Label(
+            self.image_frame, anchor="center", bg=self.bg_color, bd=0
+        )
+
         self.image_label.pack(fill="both", expand=True)
         self.image_frame.pack(padx=10, pady=(0, 0), fill="both", expand=True)
 
     def create_bottom(self):
         combo_style = ttk.Style()
 
-        combo_style.configure("Custom.TCombobox",
+        combo_style.configure(
+            "Custom.TCombobox",
             selectbackground=combo_style.lookup("TCombobox", "fieldbackground"),
             selectforeground=combo_style.lookup("TCombobox", "foreground"),
             padding=(5, self.button_height * 5),
         )
 
-        self.select_dir_button = tk.Button(self.bottom_frame, text="Source", command=self.select_directory, height=self.button_height, font=("Arial", self.font_size_2), bd=0)
-        self.refresh_button = tk.Button(self.bottom_frame, text="Refresh >", command=self.refresh, height=self.button_height, font=("Arial", self.font_size_2), bd=0)
-        self.close_button = tk.Button(self.bottom_frame, text="Close", command=self.close, height=self.button_height, font=("Arial", self.font_size_2), bd=0)
+        self.select_dir_button = tk.Button(
+            self.bottom_frame,
+            text="Source",
+            command=self.select_directory,
+            height=self.button_height,
+            font=("Arial", self.font_size_2),
+            bd=0,
+        )
+
+        self.refresh_button = tk.Button(
+            self.bottom_frame,
+            text="Refresh >",
+            command=self.refresh,
+            height=self.button_height,
+            font=("Arial", self.font_size_2),
+            bd=0,
+        )
+
+        self.close_button = tk.Button(
+            self.bottom_frame,
+            text="Close",
+            command=self.close,
+            height=self.button_height,
+            font=("Arial", self.font_size_2),
+            bd=0,
+        )
+
         self.speed_var = tk.StringVar(value="normal")
 
-        self.speed_combo = ttk.Combobox(self.bottom_frame,
+        self.speed_combo = ttk.Combobox(
+            self.bottom_frame,
             width=8,
             values=["Off", "Fast", "Normal", "Slow"],
             textvariable=self.speed_var,
@@ -111,30 +167,57 @@ class Dashboard:
         self.speed_combo.set("Normal")
         self.speed_combo.bind("<<ComboboxSelected>>", self.on_speed_change)
 
-        self.select_dir_button = tk.Button(self.bottom_frame, text="Source", command=self.select_directory, height=self.button_height, font=("Arial", self.font_size_2), bd=0)
-        self.refresh_button = tk.Button(self.bottom_frame, text="Refresh", command=self.refresh, height=self.button_height, font=("Arial", self.font_size_2), bd=0)
-        self.close_button = tk.Button(self.bottom_frame, text="Close", command=self.close, height=self.button_height, font=("Arial", self.font_size_2), bd=0)
+        self.select_dir_button = tk.Button(
+            self.bottom_frame,
+            text="Source",
+            command=self.select_directory,
+            height=self.button_height,
+            font=("Arial", self.font_size_2),
+            bd=0,
+        )
 
-        self.select_dir_button.pack(side=tk.LEFT, padx=5, pady=10)
-        self.speed_combo.pack(side=tk.LEFT, padx=5, pady=10)
-        self.refresh_button.pack(side=tk.LEFT, padx=5, pady=10)
-        self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
+        self.refresh_button = tk.Button(
+            self.bottom_frame,
+            text="Refresh",
+            command=self.refresh,
+            height=self.button_height,
+            font=("Arial", self.font_size_2),
+            bd=0,
+        )
 
-        self.select_dir_button.pack(side=tk.LEFT, padx=(10, 5), pady=10)
-        self.refresh_button.pack(side=tk.LEFT, padx=5, pady=10)
-        self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=10)
+        self.close_button = tk.Button(
+            self.bottom_frame,
+            text="Close",
+            command=self.close,
+            height=self.button_height,
+            font=("Arial", self.font_size_2),
+            bd=0,
+        )
+
+        self.select_dir_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
+        self.speed_combo.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
+        self.refresh_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
+        self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=self.pady_1)
+
+        self.select_dir_button.pack(side=tk.LEFT, padx=(10, 5), pady=self.pady_1)
+        self.refresh_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
+        self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=self.pady_1)
 
     def close(self):
         """Close the application."""
         self.root.quit()
 
+    def log(self, message):
+        """Log messages to the console."""
+        print(message) # noqa
+
     def read_noun_list(self):
         """Read the noun list from file."""
         try:
-            with open("nouns.txt", "r") as f:
+            with Path("nouns.txt").open("r", encoding="utf-8") as f:
                 return [line.strip() for line in f if line.strip()]
         except Exception as e:
-            print(f"Error reading nouns.txt: {e}")
+            self.log(f"Error reading nouns.txt: {e}")
             return ["Error", "Loading", "Words"]
 
     def select_words(self):
@@ -149,7 +232,7 @@ class Dashboard:
             self.label_2.config(text=selected_words[1])
             self.label_3.config(text=selected_words[2])
         except Exception as e:
-            print(f"Error updating labels: {e}")
+            self.log(f"Error updating labels: {e}")
 
     def refresh_thread(self):
         """Thread function to update labels every x minutes."""
@@ -176,9 +259,7 @@ class Dashboard:
         for root, _, files in os.walk(self.image_directory):
             for file in files:
                 if file.lower().endswith(self.supported_formats):
-                    self.image_list.append(os.path.join(root, file))
-
-        count = len(self.image_list)
+                    self.image_list.append(Path(root) / file)
 
     def refresh(self):
         self.show_random_image()
@@ -191,12 +272,12 @@ class Dashboard:
         random_image_path = random.choice(self.image_list)
         self.load_image(random_image_path)
 
-    def validate_number(self, P):
+    def validate_number(self, p):
         """Validate input to only allow numbers"""
-        if P == "": # Allow empty field
+        if p == "":  # Allow empty field
             return True
 
-        return P.isdigit()
+        return p.isdigit()
 
     def on_speed_change(self, event=None):
         speed = self.speed_var.get()
@@ -220,11 +301,6 @@ class Dashboard:
 
         self.stop_refresh = False
         self.start_refresh_thread()
-
-    def refresh_thread(self):
-        """Thread function to update labels every x minutes."""
-        time.sleep(self.refresh_delay * 60)
-        self.root.after(0, self.refresh)
 
     def load_image(self, file_path):
         try:
@@ -258,7 +334,10 @@ class Dashboard:
             resized_image = pil_image.resize((new_width, new_height), Image.LANCZOS)
 
             # Create a new image with the frame dimensions and paste the resized image in the center
-            final_image = Image.new("RGB", (frame_width, frame_height), "white")  # Or any background color you prefer
+            final_image = Image.new(
+                "RGB", (frame_width, frame_height), "white"
+            )  # Or any background color you prefer
+
             x_offset = (frame_width - new_width) // 2
             y_offset = (frame_height - new_height) // 2
             final_image.paste(resized_image, (x_offset, y_offset))
@@ -270,11 +349,8 @@ class Dashboard:
             self.image_label.configure(image=tk_image)
             self.image_label.image = tk_image  # Keep a reference
             self.current_image = tk_image
-
-            # Update status labels
-            filename = os.path.basename(file_path)
         except Exception as e:
-            print(f"Error loading image: {e}")
+            self.log(f"Error loading image: {e}")
 
 
 if __name__ == "__main__":
