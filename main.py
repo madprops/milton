@@ -360,7 +360,13 @@ class Dashboard:
 
 
 if __name__ == "__main__":
-    root = tk.Tk(className="milton")
+    manifest_path = Path("manifest.json")
+
+    if manifest_path.exists():
+        with manifest_path.open("r", encoding="utf-8") as f:
+            manifest = f.read()
+
+    root = tk.Tk(className=manifest["program"])
     app = Dashboard(root)
     root.configure(bg=app.bg_color)
     root.mainloop()
