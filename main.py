@@ -10,6 +10,10 @@ from PIL import Image, ImageTk  # type: ignore
 from tkinter import ttk, filedialog
 
 
+class State:
+    source: str = ""
+
+
 class Dashboard:
     def __init__(self, root: tk.Tk) -> None:
         self.rd_off = 999
@@ -28,6 +32,7 @@ class Dashboard:
         self.img_width = 300
         self.img_height = 200
         self.stop_refresh = False
+        self.state_file = Path("state.json")
 
         self.root = root
         self.root.configure(bg=self.bg_color)
@@ -43,10 +48,11 @@ class Dashboard:
         self.noun_list = self.read_noun_list()
 
         self.current_image = None
-        self.image_directory = "/home/yo/pics"
         self.image_list: list[Path] = []
         self.supported_formats = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff")
 
+        self.load_state()
+        self.init_source()
         self.start()
 
     def start(self) -> None:
@@ -59,7 +65,7 @@ class Dashboard:
         self.refresh_thd.start()
 
     def create_main(self) -> None:
-        self.main_frame = tk.Frame(root, bg=self.bg_color)
+        self.main_frame = tk.Frame(self.root, bg=self.bg_color)
 
         self.top_frame = tk.Frame(self.main_frame, bg=self.bg_color)
         self.top_frame.pack(fill="x", pady=self.pady_1)  # Increased padding
@@ -134,10 +140,10 @@ class Dashboard:
             padding=(5, self.button_height * 5),
         )
 
-        self.select_dir_button = tk.Button(
+        self.select_source_btn = tk.Button(
             self.bottom_frame,
             text="Source",
-            command=self.select_directory,
+            command=self.select_source,
             height=self.button_height,
             font=("Arial", self.font_size_2),
             bd=0,
@@ -176,10 +182,10 @@ class Dashboard:
         self.speed_combo.set("Normal")
         self.speed_combo.bind("<<ComboboxSelected>>", self.on_speed_change)
 
-        self.select_dir_button = tk.Button(
+        self.select_source_btn = tk.Button(
             self.bottom_frame,
             text="Source",
-            command=self.select_directory,
+            command=self.select_source,
             height=self.button_height,
             font=("Arial", self.font_size_2),
             bd=0,
@@ -203,12 +209,12 @@ class Dashboard:
             bd=0,
         )
 
-        self.select_dir_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
+        self.select_source_btn.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.speed_combo.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.refresh_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=self.pady_1)
 
-        self.select_dir_button.pack(side=tk.LEFT, padx=(10, 5), pady=self.pady_1)
+        self.select_source_btn.pack(side=tk.LEFT, padx=(10, 5), pady=self.pady_1)
         self.refresh_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=self.pady_1)
 
@@ -251,21 +257,54 @@ class Dashboard:
             if not self.stop_refresh:  # Check again after the sleep
                 self.root.after(0, self.refresh)
 
-    def select_directory(self) -> None:
-        directory = filedialog.askdirectory(title="Select Image Directory")
+    def select_source(self) -> None:
+        directory = filedialog.askdirectory(title="Select Source Directory")
 
         if directory:
-            self.image_directory = directory
+            self.state.source = directory
+            self.scan_for_images()
+            self.refresh()
+            self.save_state()
+
+    def load_state(self) -> None:
+        """Load application state from state.json file."""
+        self.state_json = {}
+        self.state = State()
+
+        try:
+            if self.state_file.exists():
+                with self.state_file.open("r", encoding="utf-8") as f:
+                    self.state_json = json.load(f)
+
+            self.state.source = self.state_json.get("source", "")
+        except Exception as e:
+            self.log(f"Error loading state file: {e}")
+
+    def init_source(self) -> None:
+        """Initialize the image source from the loaded state."""
+        self.load_state()
+
+        if self.state.source:
             self.scan_for_images()
             self.refresh()
 
+    def save_state(self) -> None:
+        """Save application state to state.json file."""
+        try:
+            state = {"source": self.state.source}
+
+            with self.state_file.open("w", encoding="utf-8") as f:
+                json.dump(state, f, indent=2)
+        except Exception as e:
+            self.log(f"Error saving state file: {e}")
+
     def scan_for_images(self) -> None:
-        if not self.image_directory:
+        if not self.state.source:
             return
 
         self.image_list = []
 
-        for root, _, files in os.walk(self.image_directory):
+        for root, _, files in os.walk(self.state.source):
             for file in files:
                 if file.lower().endswith(self.supported_formats):
                     self.image_list.append(Path(root) / file)
@@ -361,7 +400,7 @@ class Dashboard:
             self.log(f"Error loading image: {e}")
 
 
-if __name__ == "__main__":
+def main() -> None:
     manifest_path = Path("manifest.json")
 
     if manifest_path.exists():
@@ -372,3 +411,7 @@ if __name__ == "__main__":
             app = Dashboard(root)
             root.configure(bg=app.bg_color)
             root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
