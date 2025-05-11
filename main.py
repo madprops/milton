@@ -12,6 +12,7 @@ from tkinter import ttk, filedialog
 
 class State:
     source: str = ""
+    speed: int = "Normal"
 
 
 class Dashboard:
@@ -179,7 +180,7 @@ class Dashboard:
             state="readonly",
         )
 
-        self.speed_combo.set("Normal")
+        self.speed_combo.set(self.state.speed)
         self.speed_combo.bind("<<ComboboxSelected>>", self.on_speed_change)
 
         self.select_source_btn = tk.Button(
@@ -277,6 +278,7 @@ class Dashboard:
                     self.state_json = json.load(f)
 
             self.state.source = self.state_json.get("source", "")
+            self.state.speed = self.state_json.get("speed", "Normal")
         except Exception as e:
             self.log(f"Error loading state file: {e}")
 
@@ -328,19 +330,20 @@ class Dashboard:
         return p.isdigit()
 
     def on_speed_change(self, event: Any = None) -> None:
-        speed = self.speed_var.get()
+        self.state.speed = self.speed_var.get()
 
-        if speed == "Off":
+        if self.state.speed == "Off":
             self.refresh_delay = self.rd_off
-        elif speed == "Fast":
+        elif self.state.speed == "Fast":
             self.refresh_delay = self.rd_fast
-        elif speed == "Normal":
+        elif self.state.speed == "Normal":
             self.refresh_delay = self.rd_normal
-        elif speed == "Slow":
+        elif self.state.speed == "Slow":
             self.refresh_delay = self.rd_slow
 
         self.restart_refresh_thread()
         self.root.focus_set()
+        self.save_state()
 
     def restart_refresh_thread(self) -> None:
         """Restart the refresh thread with the current delay."""
