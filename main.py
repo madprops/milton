@@ -136,7 +136,7 @@ class Dashboard:
 
         combo_style.configure(
             "Custom.TCombobox",
-            selectbackground=combo_style.lookup("TCombobox", "fieldbackground"),
+            selectbackground=combo_style.lookup("TCombobox", "background"),
             selectforeground=combo_style.lookup("TCombobox", "foreground"),
             padding=(5, self.button_height * 5),
         )
@@ -333,8 +333,10 @@ class Dashboard:
         return p.isdigit()
 
     def on_speed_change(self, event: Any = None) -> None:
+        """Handle speed change events from the combobox."""
         self.state.speed = self.speed_var.get()
 
+        # Set the appropriate delay based on the selected speed
         if self.state.speed == "Off":
             self.refresh_delay = self.rd_off
         elif self.state.speed == "Fast":
@@ -344,15 +346,22 @@ class Dashboard:
         elif self.state.speed == "Slow":
             self.refresh_delay = self.rd_slow
 
+        # Restart thread with new delay
         self.restart_refresh_thread()
         self.root.focus_set()
         self.save_state()
 
     def restart_refresh_thread(self) -> None:
-        """Restart the refresh thread with the current delay."""
-        if self.refresh_thd and self.refresh_thd.is_alive():
-            self.stop_refresh = True
+        """Safely stop and restart the refresh thread with the current delay."""
+        # Signal the existing thread to stop
+        self.stop_refresh = True
 
+        # If a thread exists and is running, wait for it to terminate
+        if hasattr(self, 'refresh_thd') and self.refresh_thd and self.refresh_thd.is_alive():
+            # Give the thread a chance to see the stop flag and exit naturally
+            self.refresh_thd.join(timeout=0.5)  # Wait up to 0.5 seconds for clean exit
+
+        # Reset the flag and start a new thread
         self.stop_refresh = False
         self.start_refresh_thread()
 
