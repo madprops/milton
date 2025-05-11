@@ -293,7 +293,10 @@ class Dashboard:
     def save_state(self) -> None:
         """Save application state to state.json file."""
         try:
-            state = {"source": self.state.source}
+            state = {
+                "source": self.state.source,
+                "speed": self.state.speed,
+            }
 
             with self.state_file.open("w", encoding="utf-8") as f:
                 json.dump(state, f, indent=2)
