@@ -12,7 +12,7 @@ from tkinter import ttk, filedialog
 
 class State:
     source: str = ""
-    speed: int = "Normal"
+    speed: str = "Normal"
 
 
 class Dashboard:
@@ -41,6 +41,7 @@ class Dashboard:
         self.root.geometry("600x400")
         self.root.configure(bg="grey")
 
+        self.load_state()
         self.create_main()
         self.create_top()
         self.create_image()
@@ -52,7 +53,6 @@ class Dashboard:
         self.image_list: list[Path] = []
         self.supported_formats = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff")
 
-        self.load_state()
         self.init_source()
         self.start()
 
@@ -354,18 +354,24 @@ class Dashboard:
         self.start_refresh_thread()
 
     def load_image(self, file_path: Path) -> None:
+        """Load and display an image with proper resizing after the window is fully rendered."""
         try:
+            # Store the file path for later use
+            self.pending_image_path = file_path
+
+            # Check if the window is fully rendered
+            if (
+                self.image_frame.winfo_width() <= 1
+                or self.image_frame.winfo_height() <= 1
+            ):
+                # If not, schedule this to run after the window is updated
+                self.root.after(100, lambda: self.load_image(file_path))
+                return
+
             pil_image = Image.open(file_path)
             img_width, img_height = pil_image.size
             frame_width = self.image_frame.winfo_width()
             frame_height = self.image_frame.winfo_height()
-
-            # Handle initial loading where frame dimensions might be zero
-            if frame_width <= 1:
-                frame_width = img_width
-
-            if frame_height <= 1:
-                frame_height = img_height
 
             # Calculate aspect ratios
             image_aspect = img_width / img_height
@@ -381,13 +387,17 @@ class Dashboard:
                 new_height = frame_height
                 new_width = int(frame_height * image_aspect)
 
+            # Add a margin to ensure bottom controls are visible
+            max_height = int(frame_height * 0.9)  # Use only 90% of available height
+            if new_height > max_height:
+                new_height = max_height
+                new_width = int(max_height * image_aspect)
+
             # Resize the image using LANCZOS for good quality
             resized_image = pil_image.resize((new_width, new_height), Image.LANCZOS)
 
             # Create a new image with the frame dimensions and paste the resized image in the center
-            final_image = Image.new(
-                "RGB", (frame_width, frame_height), "white"
-            )  # Or any background color you prefer
+            final_image = Image.new("RGB", (frame_width, frame_height), self.bg_color)
 
             x_offset = (frame_width - new_width) // 2
             y_offset = (frame_height - new_height) // 2
