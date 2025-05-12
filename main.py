@@ -357,7 +357,11 @@ class Dashboard:
         self.stop_refresh = True
 
         # If a thread exists and is running, wait for it to terminate
-        if hasattr(self, 'refresh_thd') and self.refresh_thd and self.refresh_thd.is_alive():
+        if (
+            hasattr(self, "refresh_thd")
+            and self.refresh_thd
+            and self.refresh_thd.is_alive()
+        ):
             # Give the thread a chance to see the stop flag and exit naturally
             self.refresh_thd.join(timeout=0.5)  # Wait up to 0.5 seconds for clean exit
 
