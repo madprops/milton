@@ -110,7 +110,7 @@ class Dashboard:
             label = tk.Label(
                 labels,
                 text="---",
-                font=("Arial", self.font_size, "bold"),
+                font=("Arial", self.font_size),
                 height=self.button_height,
                 padx=self.wid_pad_x,
                 pady=self.wid_pad_y,

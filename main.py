@@ -19,7 +19,7 @@ def main() -> None:
             root = tk.Tk(className=manifest["program"])
 
             # Set application icon
-            icon_path = Path("icon.jpg")
+            icon_path = Path("icon.png")
 
             if icon_path.exists():
                 icon = tk.PhotoImage(file="icon.png")
