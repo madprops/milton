@@ -1,7 +1,11 @@
+# Standard
 import json
-import tkinter as tk
 from pathlib import Path
 
+# Libraries
+import tkinter as tk
+
+# Modules
 from dashboard import Dashboard
 
 

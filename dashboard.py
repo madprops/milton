@@ -1,14 +1,18 @@
+# Standard
 import os
 import time
+import json
 import random
 import threading
-import json
-import tkinter as tk
 from typing import Any
 from pathlib import Path
-from PIL import Image, ImageTk  # type: ignore
-from tkinter import ttk, filedialog
 
+# Libraries
+import tkinter as tk
+from tkinter import ttk, filedialog
+from PIL import Image, ImageTk  # type: ignore
+
+# Modules
 from state import State
 
 
