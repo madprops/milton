@@ -17,6 +17,14 @@ def main() -> None:
             f_manifest = f.read()
             manifest = json.loads(f_manifest)
             root = tk.Tk(className=manifest["program"])
+
+            # Set application icon
+            icon_path = Path("icon.jpg")
+
+            if icon_path.exists():
+                icon = tk.PhotoImage(file="icon.png")
+                root.iconphoto(True, icon)
+
             app = Dashboard(root)
             root.configure(bg=app.bg_color)
             root.mainloop()
