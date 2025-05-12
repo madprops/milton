@@ -44,7 +44,6 @@ class Dashboard:
 
         self.load_state()
         self.create_main()
-        self.create_top()
         self.create_image()
         self.create_bottom()
 
@@ -55,11 +54,15 @@ class Dashboard:
         self.supported_formats = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff")
 
         self.init_source()
+        self.update_speed()
         self.start()
 
     def start(self) -> None:
         self.scan_for_images()
-        self.root.after(100, self.refresh)
+        self.root.after(100, self.do_start)
+
+    def do_start(self) -> None:
+        self.do_refresh()
         self.start_refresh_thread()
 
     def start_refresh_thread(self) -> None:
@@ -82,8 +85,19 @@ class Dashboard:
         self.main_frame.pack_propagate(False)
 
     def create_top(self) -> None:
-        labels = tk.Frame(self.top_frame, bg=self.bg_color, pady=3)
-        labels.pack(expand=True)
+        for widget in self.top_frame.winfo_children():
+            widget.destroy()
+
+        # Create a frame that contains the canvas
+        container = tk.Frame(self.top_frame, bg=self.bg_color)
+        container.pack(fill="both", expand=True)
+
+        # Create a canvas that will hold the labels
+        canvas = tk.Canvas(container, bg=self.bg_color, highlightthickness=0, height=50)
+        canvas.pack(fill="both", expand=True)
+
+        # Create a frame inside the canvas to hold the labels
+        labels = tk.Frame(canvas, bg=self.bg_color, pady=3)
 
         # Convert nouns setting to int and ensure it's at least 1
         num_nouns = max(1, int(self.state.nouns))
@@ -104,6 +118,59 @@ class Dashboard:
 
             label.pack(side=tk.LEFT, padx=self.padx_1)
             self.noun_labels.append(label)
+
+        # Create a window in the canvas to display the labels frame
+        canvas_window = canvas.create_window((0, 0), window=labels, anchor="nw")
+
+        # Function to precisely center the labels
+        def center_labels() -> None:
+            # Get the exact width of both containers
+            labels_width = labels.winfo_width()
+            container_width = container.winfo_width()
+
+            # Calculate the center position
+            center_position = (container_width - labels_width) / 2
+
+            # Update the window position with the exact center
+            canvas.coords(canvas_window, center_position, 0)
+
+            # Update scroll region to reflect the full width of labels
+            canvas.configure(scrollregion=(0, 0, labels_width, labels.winfo_height()))
+
+        # Update function that handles both scrolling and centering
+        def update_scroll_and_center(event: Any = None) -> None:
+            # Force geometry update
+            labels.update_idletasks()
+            center_labels()
+
+        # Bind events to update centering when sizes change
+        labels.bind("<Configure>", update_scroll_and_center)
+        container.bind("<Configure>", update_scroll_and_center)
+
+        # Add mousewheel scrolling (horizontal scroll with mousewheel)
+        def _on_mousewheel(event: Any) -> None:
+            # Only scroll if the content is wider than the container
+            if labels.winfo_width() > container.winfo_width():
+                # Scroll horizontally with the mousewheel
+                if hasattr(event, "delta"):  # Windows
+                    if event.delta < 0:  # Scroll right
+                        canvas.xview_scroll(1, "units")
+                    else:  # Scroll left
+                        canvas.xview_scroll(-1, "units")
+                elif hasattr(event, "num"):  # Linux
+                    if event.num == 5:  # Scroll right
+                        canvas.xview_scroll(1, "units")
+                    elif event.num == 4:  # Scroll left
+                        canvas.xview_scroll(-1, "units")
+
+        # Bind mousewheel event to canvas
+        canvas.bind("<MouseWheel>", _on_mousewheel)  # Windows
+        canvas.bind("<Button-4>", _on_mousewheel)  # Linux scroll up
+        canvas.bind("<Button-5>", _on_mousewheel)  # Linux scroll down
+
+        # Force the frame to take the width it needs and update centering
+        labels.update_idletasks()
+        center_labels()
 
     def create_image(self) -> None:
         self.image_frame = tk.Frame(
@@ -137,7 +204,7 @@ class Dashboard:
         self.speed_combo = ttk.Combobox(
             self.bottom_frame,
             width=6,
-            values=["Off", "Fast", "Normal", "Slow"],
+            values=["Pause", "Fast", "Normal", "Slow"],
             textvariable=self.speed_var,
             font=("Arial", self.font_size_2),
             style="Custom.TCombobox",
@@ -189,7 +256,9 @@ class Dashboard:
             bd=0,
         )
 
-        self.select_source_btn.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
+        self.select_source_btn.pack(
+            side=tk.LEFT, padx=(10, self.padx_1), pady=self.pady_1
+        )
         self.speed_combo.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.nouns_combo.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.refresh_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
@@ -231,11 +300,23 @@ class Dashboard:
 
     def refresh_thread(self) -> None:
         """Thread function to update labels every x minutes."""
+        thread_id = threading.get_ident()
+
         while not self.stop_refresh:
-            time.sleep(self.refresh_delay * 60)
+            self.log(f"Thread {thread_id}: Waiting {self.refresh_delay * 60} seconds")
+
+            # Sleep in smaller increments to check stop_refresh more frequently
+            for _ in range(int(self.refresh_delay * 60)):
+                if self.stop_refresh:
+                    self.log(f"Thread {thread_id}: Stopping early")
+                    return
+
+                time.sleep(1)
+
             # Use after() to safely update UI from a non-main thread
-            if not self.stop_refresh:  # Check again after the sleep
-                self.root.after(0, self.refresh)
+            if not self.stop_refresh:
+                # Pass a flag to indicate this was scheduled from background thread
+                self.root.after(0, lambda: self.refresh(from_thread=True))
 
     def select_source(self) -> None:
         directory = filedialog.askdirectory(title="Select Source Directory")
@@ -268,7 +349,6 @@ class Dashboard:
 
         if self.state.source:
             self.scan_for_images()
-            self.refresh()
 
     def save_state(self) -> None:
         """Save application state to state.json file."""
@@ -294,13 +374,18 @@ class Dashboard:
                 if file.lower().endswith(self.supported_formats):
                     self.image_list.append(Path(root) / file)
 
-    def refresh(self) -> None:
+    def do_refresh(self) -> None:
+        self.create_top()
         self.show_random_image()
         self.select_words()
 
-        # Reset the refresh timer when manually refreshed
-        # Only restart if not in "Off" mode
-        if self.state.speed != "Off":
+    def refresh(self, from_thread: bool = False) -> None:
+        """Update the display with new image and words."""
+        self.do_refresh()
+
+        # Only restart the thread if this was triggered manually (not from the background thread)
+        # and if we're not in Pause mode
+        if not from_thread and (self.state.speed != "Pause"):
             self.restart_refresh_thread()
 
     def show_random_image(self) -> None:
@@ -317,12 +402,9 @@ class Dashboard:
 
         return p.isdigit()
 
-    def on_speed_change(self, event: Any = None) -> None:
-        """Handle speed change events from the combobox."""
-        self.state.speed = self.speed_var.get()
-
+    def update_speed(self) -> None:
         # Set the appropriate delay based on the selected speed
-        if self.state.speed == "Off":
+        if self.state.speed == "Pause":
             self.refresh_delay = self.rd_off
         elif self.state.speed == "Fast":
             self.refresh_delay = self.rd_fast
@@ -330,6 +412,11 @@ class Dashboard:
             self.refresh_delay = self.rd_normal
         elif self.state.speed == "Slow":
             self.refresh_delay = self.rd_slow
+
+    def on_speed_change(self, event: Any = None) -> None:
+        """Handle speed change events from the combobox."""
+        self.state.speed = self.speed_var.get()
+        self.update_speed()
 
         # Restart thread with new delay
         self.restart_refresh_thread()
@@ -353,12 +440,23 @@ class Dashboard:
             and self.refresh_thd
             and self.refresh_thd.is_alive()
         ):
-            # Give the thread a chance to see the stop flag and exit naturally
-            self.refresh_thd.join(timeout=0.5)  # Wait up to 0.5 seconds for clean exit
+            self.log(f"Waiting for thread {self.refresh_thd.ident} to terminate...")
+            # Wait for the thread to exit
+            self.refresh_thd.join(timeout=5.0)
 
-        # Reset the flag and start a new thread
-        self.stop_refresh = False
-        self.start_refresh_thread()
+            # If thread is still alive after timeout
+            if self.refresh_thd.is_alive():
+                self.log(
+                    f"Warning: Thread {self.refresh_thd.ident} didn't terminate properly"
+                )
+
+                # Don't create a new thread if old one is stuck
+                return
+
+        # Reset the flag and start a new thread only if we're not in "Pause" mode
+        if self.state.speed != "Pause":
+            self.stop_refresh = False
+            self.start_refresh_thread()
 
     def load_image(self, file_path: Path) -> None:
         """Load and display an image with proper resizing after the window is fully rendered."""
