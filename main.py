@@ -13,6 +13,7 @@ from tkinter import ttk, filedialog
 class State:
     source: str = ""
     speed: str = "Normal"
+    nouns: str = "3"
 
 
 class Dashboard:
@@ -84,36 +85,25 @@ class Dashboard:
         labels = tk.Frame(self.top_frame, bg=self.bg_color, pady=3)
         labels.pack(expand=True)
 
-        self.label_1 = tk.Label(
-            labels,
-            text="---",
-            font=("Arial", self.font_size),
-            height=self.button_height,
-            padx=self.wid_pad_x,
-            pady=self.wid_pad_y,
-        )
+        # Convert nouns setting to int and ensure it's at least 1
+        num_nouns = max(1, int(self.state.nouns))
 
-        self.label_2 = tk.Label(
-            labels,
-            text="---",
-            font=("Arial", self.font_size),
-            height=self.button_height,
-            padx=self.wid_pad_x,
-            pady=self.wid_pad_y,
-        )
+        # Create a list to store all noun labels
+        self.noun_labels = []
 
-        self.label_3 = tk.Label(
-            labels,
-            text="---",
-            font=("Arial", self.font_size),
-            height=self.button_height,
-            padx=self.wid_pad_x,
-            pady=self.wid_pad_y,
-        )
+        # Dynamically create the specified number of labels
+        for _i in range(num_nouns):
+            label = tk.Label(
+                labels,
+                text="---",
+                font=("Arial", self.font_size),
+                height=self.button_height,
+                padx=self.wid_pad_x,
+                pady=self.wid_pad_y,
+            )
 
-        self.label_1.pack(side=tk.LEFT, padx=self.padx_1)
-        self.label_2.pack(side=tk.LEFT, padx=self.padx_1)
-        self.label_3.pack(side=tk.LEFT, padx=self.padx_1)
+            label.pack(side=tk.LEFT, padx=self.padx_1)
+            self.noun_labels.append(label)
 
     def create_image(self) -> None:
         self.image_frame = tk.Frame(
@@ -141,38 +131,12 @@ class Dashboard:
             padding=(5, self.button_height * 5),
         )
 
-        self.select_source_btn = tk.Button(
-            self.bottom_frame,
-            text="Source",
-            command=self.select_source,
-            height=self.button_height,
-            font=("Arial", self.font_size_2),
-            bd=0,
-        )
-
-        self.refresh_button = tk.Button(
-            self.bottom_frame,
-            text="Refresh >",
-            command=self.refresh,
-            height=self.button_height,
-            font=("Arial", self.font_size_2),
-            bd=0,
-        )
-
-        self.close_button = tk.Button(
-            self.bottom_frame,
-            text="Close",
-            command=self.close,
-            height=self.button_height,
-            font=("Arial", self.font_size_2),
-            bd=0,
-        )
-
+        self.root.option_add("*TCombobox*Listbox.font", ("Arial", self.font_size_2))
         self.speed_var = tk.StringVar(value="normal")
 
         self.speed_combo = ttk.Combobox(
             self.bottom_frame,
-            width=8,
+            width=6,
             values=["Off", "Fast", "Normal", "Slow"],
             textvariable=self.speed_var,
             font=("Arial", self.font_size_2),
@@ -201,6 +165,21 @@ class Dashboard:
             bd=0,
         )
 
+        self.nouns_var = tk.StringVar(value="3")
+
+        self.nouns_combo = ttk.Combobox(
+            self.bottom_frame,
+            width=3,
+            values=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+            textvariable=self.nouns_var,
+            font=("Arial", self.font_size_2),
+            style="Custom.TCombobox",
+            state="readonly",
+        )
+
+        self.nouns_combo.set(self.state.nouns)
+        self.nouns_combo.bind("<<ComboboxSelected>>", self.on_nouns_change)
+
         self.close_button = tk.Button(
             self.bottom_frame,
             text="Close",
@@ -212,10 +191,7 @@ class Dashboard:
 
         self.select_source_btn.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.speed_combo.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
-        self.refresh_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
-        self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=self.pady_1)
-
-        self.select_source_btn.pack(side=tk.LEFT, padx=(10, 5), pady=self.pady_1)
+        self.nouns_combo.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.refresh_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=self.pady_1)
 
@@ -237,16 +213,19 @@ class Dashboard:
             return ["Error", "Loading", "Words"]
 
     def select_words(self) -> None:
-        """Update all three labels with random words."""
+        """Update labels with random words based on the number specified in settings."""
         try:
-            if len(self.noun_list) >= 3:
-                selected_words = random.sample(self.noun_list, 3)
-            else:
-                selected_words = random.choices(self.noun_list, k=3)
+            num_nouns = len(self.noun_labels)
 
-            self.label_1.config(text=selected_words[0])
-            self.label_2.config(text=selected_words[1])
-            self.label_3.config(text=selected_words[2])
+            # Select words from the noun list
+            if len(self.noun_list) >= num_nouns:
+                selected_words = random.sample(self.noun_list, num_nouns)
+            else:
+                selected_words = random.choices(self.noun_list, k=num_nouns)
+
+            # Update each label with a selected word
+            for i, label in enumerate(self.noun_labels):
+                label.config(text=selected_words[i])
         except Exception as e:
             self.log(f"Error updating labels: {e}")
 
@@ -279,6 +258,7 @@ class Dashboard:
 
             self.state.source = self.state_json.get("source", "")
             self.state.speed = self.state_json.get("speed", "Normal")
+            self.state.nouns = self.state_json.get("nouns", "3")
         except Exception as e:
             self.log(f"Error loading state file: {e}")
 
@@ -318,6 +298,11 @@ class Dashboard:
         self.show_random_image()
         self.select_words()
 
+        # Reset the refresh timer when manually refreshed
+        # Only restart if not in "Off" mode
+        if self.state.speed != "Off":
+            self.restart_refresh_thread()
+
     def show_random_image(self) -> None:
         if not self.image_list:
             return
@@ -348,6 +333,12 @@ class Dashboard:
 
         # Restart thread with new delay
         self.restart_refresh_thread()
+        self.root.focus_set()
+        self.save_state()
+
+    def on_nouns_change(self, event: Any = None) -> None:
+        """Handle nouns change events from the combobox."""
+        self.state.nouns = self.nouns_var.get()
         self.root.focus_set()
         self.save_state()
 
@@ -405,6 +396,7 @@ class Dashboard:
 
             # Add a margin to ensure bottom controls are visible
             max_height = int(frame_height * 0.9)  # Use only 90% of available height
+
             if new_height > max_height:
                 new_height = max_height
                 new_width = int(max_height * image_aspect)
