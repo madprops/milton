@@ -289,12 +289,15 @@ class Dashboard:
         self.speed_combo.pack(
             side=tk.LEFT, padx=(0, self.wid_pad_x), pady=self.wid_pad_y
         )
+
         self.nouns_combo.pack(
             side=tk.LEFT, padx=(0, self.wid_pad_x), pady=self.wid_pad_y
         )
+
         self.refresh_button.pack(
             side=tk.LEFT, padx=(0, self.wid_pad_x), pady=self.wid_pad_y
         )
+
         self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=self.wid_pad_y)
 
     def close(self) -> None:
