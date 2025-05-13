@@ -35,6 +35,7 @@ class Dashboard:
         self.img_height = 200
         self.stop_refresh = False
         self.state_file = Path("state.json")
+        self.image_padding = 0.8
 
         self.root = root
         self.root.configure(bg=self.bg_color)
@@ -93,7 +94,7 @@ class Dashboard:
         container.pack(fill="both", expand=True)
 
         # Create a canvas that will hold the labels
-        canvas = tk.Canvas(container, bg=self.bg_color, highlightthickness=0, height=50)
+        canvas = tk.Canvas(container, bg=self.bg_color, highlightthickness=0, height=38)
         canvas.pack(fill="both", expand=True)
 
         # Create a frame inside the canvas to hold the labels
@@ -493,7 +494,9 @@ class Dashboard:
                 new_width = int(frame_height * image_aspect)
 
             # Add a margin to ensure bottom controls are visible
-            max_height = int(frame_height * 0.9)  # Use only 90% of available height
+            max_height = int(
+                frame_height * self.image_padding
+            )  # Use only 90% of available height
 
             if new_height > max_height:
                 new_height = max_height
