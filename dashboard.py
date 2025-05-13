@@ -260,6 +260,7 @@ class Dashboard:
         self.select_source_btn.pack(
             side=tk.LEFT, padx=(10, self.padx_1), pady=self.pady_1
         )
+
         self.speed_combo.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.nouns_combo.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
         self.refresh_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
