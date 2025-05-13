@@ -6,10 +6,10 @@ import random
 import threading
 from typing import Any
 from pathlib import Path
+from tkinter import ttk, filedialog
+import tkinter as tk
 
 # Libraries
-import tkinter as tk
-from tkinter import ttk, filedialog
 from PIL import Image, ImageTk  # type: ignore
 
 # Modules
@@ -27,7 +27,7 @@ class Dashboard:
         self.button_height = 1
         self.font_size = 14
         self.font_size_2 = 13
-        self.wid_pad_x = 5
+        self.wid_pad_x = 8
         self.wid_pad_y = 3
         self.pady_1 = 10
         self.padx_1 = 5
@@ -74,13 +74,13 @@ class Dashboard:
         self.main_frame = tk.Frame(self.root, bg=self.bg_color)
 
         self.top_frame = tk.Frame(self.main_frame, bg=self.bg_color)
-        self.top_frame.pack(fill="x", pady=self.pady_1)  # Increased padding
+        self.top_frame.pack(fill="x", pady=(10, 0))  # Increased padding
 
         self.middle_frame = tk.Frame(self.main_frame, bg=self.bg_color)
         self.middle_frame.pack(fill="both", expand=True)
 
         self.bottom_frame = tk.Frame(self.main_frame, bg=self.bg_color)
-        self.bottom_frame.pack(fill="x", pady=1)
+        self.bottom_frame.pack(fill="x", pady=(0, 10))
 
         self.main_frame.pack(fill="both", expand=True)
         self.main_frame.pack_propagate(False)
@@ -192,11 +192,34 @@ class Dashboard:
     def create_bottom(self) -> None:
         combo_style = ttk.Style()
 
+        combo_style.layout(
+            "Normal.TCombobox",
+            [
+                (
+                    "Combobox.field",
+                    {
+                        "children": [
+                            (
+                                "Combobox.padding",
+                                {
+                                    "children": [
+                                        ("Combobox.textarea", {"sticky": "nswe"}),
+                                    ]
+                                },
+                            )
+                        ]
+                    },
+                ),
+            ],
+        )
+
         combo_style.configure(
-            "Custom.TCombobox",
+            "Normal.TCombobox",
             selectbackground=combo_style.lookup("TCombobox", "background"),
             selectforeground=combo_style.lookup("TCombobox", "foreground"),
             padding=(5, self.button_height * 5),
+            relief="flat",
+            borderwidth=0,
         )
 
         self.root.option_add("*TCombobox*Listbox.font", ("Arial", self.font_size_2))
@@ -208,8 +231,9 @@ class Dashboard:
             values=["Pause", "Fast", "Normal", "Slow"],
             textvariable=self.speed_var,
             font=("Arial", self.font_size_2),
-            style="Custom.TCombobox",
+            style="Normal.TCombobox",
             state="readonly",
+            justify=tk.CENTER,
         )
 
         self.speed_combo.set(self.state.speed)
@@ -241,7 +265,8 @@ class Dashboard:
             values=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
             textvariable=self.nouns_var,
             font=("Arial", self.font_size_2),
-            style="Custom.TCombobox",
+            style="Normal.TCombobox",
+            justify=tk.CENTER,
             state="readonly",
         )
 
@@ -258,13 +283,19 @@ class Dashboard:
         )
 
         self.select_source_btn.pack(
-            side=tk.LEFT, padx=(10, self.padx_1), pady=self.pady_1
+            side=tk.LEFT, padx=(10, self.wid_pad_x), pady=self.wid_pad_y
         )
 
-        self.speed_combo.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
-        self.nouns_combo.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
-        self.refresh_button.pack(side=tk.LEFT, padx=self.padx_1, pady=self.pady_1)
-        self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=self.pady_1)
+        self.speed_combo.pack(
+            side=tk.LEFT, padx=(0, self.wid_pad_x), pady=self.wid_pad_y
+        )
+        self.nouns_combo.pack(
+            side=tk.LEFT, padx=(0, self.wid_pad_x), pady=self.wid_pad_y
+        )
+        self.refresh_button.pack(
+            side=tk.LEFT, padx=(0, self.wid_pad_x), pady=self.wid_pad_y
+        )
+        self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=self.wid_pad_y)
 
     def close(self) -> None:
         """Close the application."""
@@ -305,8 +336,6 @@ class Dashboard:
         thread_id = threading.get_ident()
 
         while not self.stop_refresh:
-            self.log(f"Thread {thread_id}: Waiting {self.refresh_delay * 60} seconds")
-
             # Sleep in smaller increments to check stop_refresh more frequently
             for _ in range(int(self.refresh_delay * 60)):
                 if self.stop_refresh:
