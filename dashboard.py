@@ -208,7 +208,8 @@ class Dashboard:
             bd=0,
         )
 
-        button_style.map("Normal.TButton",
+        button_style.map(
+            "Normal.TButton",
             background=[("active", self.button_color_hover)],
             relief=[("active", "flat")],
         )
@@ -216,35 +217,48 @@ class Dashboard:
         combo_style = ttk.Style()
 
         combo_style.layout(
-            "Normal.TCombobox",
+            "TCombobox",
             [
                 (
                     "Combobox.padding",
                     {
                         "children": [
-                            ("Combobox.textarea", {"sticky": "nswe"})
+                            ("Combobox.textarea", {"sticky": "nswe"}),
                         ]
-                    }
+                    },
                 )
-            ]
+            ],
         )
 
         combo_style.configure(
             "Normal.TCombobox",
             background=self.button_color,
-            foreground=self.button_text,
-            selectbackground=combo_style.lookup("TCombobox", "background"),
-            selectforeground=combo_style.lookup("TCombobox", "foreground"),
+            oreground=self.button_text,
             padding=(5, self.button_height * 5),
             relief="flat",
             borderwidth=0,
             highlightthickness=0,
         )
 
-        combo_style.map("Normal.TCombobox",
-            fieldbackground=[("hover", self.button_color_hover)],
-            background=[("readonly", self.button_color), ("hover", self.button_color_hover)],
+        combo_style.configure(
+            "Hover.TCombobox",
+            background=self.button_color_hover,
+            foreground=self.button_text,
+            padding=(5, self.button_height * 5),
+            relief="flat",
+            borderwidth=0,
+            highlightthickness=0,
         )
+
+        # Replace the current combobox event handlers with these:
+        def on_combobox_enter(event: Any) -> None:
+            widget = event.widget
+            # Use configure to set style-specific properties
+            widget.configure(style="Hover.TCombobox")
+
+        def on_combobox_leave(event: Any) -> None:
+            widget = event.widget
+            widget.configure(style="Normal.TCombobox")
 
         self.root.option_add("*TCombobox*Listbox.font", ("Arial", self.font_size_2))
         self.speed_var = tk.StringVar(value="normal")
@@ -259,6 +273,9 @@ class Dashboard:
             state="readonly",
             justify=tk.CENTER,
         )
+
+        self.speed_combo.bind("<Enter>", on_combobox_enter)
+        self.speed_combo.bind("<Leave>", on_combobox_leave)
 
         self.speed_combo.set(self.state.speed)
         self.speed_combo.bind("<<ComboboxSelected>>", self.on_speed_change)
@@ -289,6 +306,9 @@ class Dashboard:
             justify=tk.CENTER,
             state="readonly",
         )
+
+        self.nouns_combo.bind("<Enter>", on_combobox_enter)
+        self.nouns_combo.bind("<Leave>", on_combobox_leave)
 
         self.nouns_combo.set(self.state.nouns)
         self.nouns_combo.bind("<<ComboboxSelected>>", self.on_nouns_change)
