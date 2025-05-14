@@ -36,6 +36,9 @@ class Dashboard:
         self.stop_refresh = False
         self.state_file = Path("state.json")
         self.image_padding = 0.8
+        self.button_color = "#d9d9d9"
+        self.button_color_hover = "#cecece"
+        self.button_text = "#000000"
 
         self.root = root
         self.root.configure(bg=self.bg_color)
@@ -190,36 +193,57 @@ class Dashboard:
         self.image_frame.pack(padx=10, pady=(0, 0), fill="both", expand=True)
 
     def create_bottom(self) -> None:
+        button_style = ttk.Style()
+
+        button_style.configure(
+            "Normal.TButton",
+            background=self.button_color,
+            foreground=self.button_text,
+            padding=(self.wid_pad_x, self.wid_pad_y),
+            relief="flat",
+            borderwidth=0,
+            highlightthickness=0,
+            font=("Arial", self.font_size_2),
+            height=self.button_height,
+            bd=0,
+        )
+
+        button_style.map("Normal.TButton",
+            background=[("active", self.button_color_hover)],
+            relief=[("active", "flat")],
+        )
+
         combo_style = ttk.Style()
 
         combo_style.layout(
             "Normal.TCombobox",
             [
                 (
-                    "Combobox.field",
+                    "Combobox.padding",
                     {
                         "children": [
-                            (
-                                "Combobox.padding",
-                                {
-                                    "children": [
-                                        ("Combobox.textarea", {"sticky": "nswe"}),
-                                    ]
-                                },
-                            )
+                            ("Combobox.textarea", {"sticky": "nswe"})
                         ]
-                    },
-                ),
-            ],
+                    }
+                )
+            ]
         )
 
         combo_style.configure(
             "Normal.TCombobox",
+            background=self.button_color,
+            foreground=self.button_text,
             selectbackground=combo_style.lookup("TCombobox", "background"),
             selectforeground=combo_style.lookup("TCombobox", "foreground"),
             padding=(5, self.button_height * 5),
             relief="flat",
             borderwidth=0,
+            highlightthickness=0,
+        )
+
+        combo_style.map("Normal.TCombobox",
+            fieldbackground=[("hover", self.button_color_hover)],
+            background=[("readonly", self.button_color), ("hover", self.button_color_hover)],
         )
 
         self.root.option_add("*TCombobox*Listbox.font", ("Arial", self.font_size_2))
@@ -239,22 +263,18 @@ class Dashboard:
         self.speed_combo.set(self.state.speed)
         self.speed_combo.bind("<<ComboboxSelected>>", self.on_speed_change)
 
-        self.select_source_btn = tk.Button(
+        self.select_source_btn = ttk.Button(
             self.bottom_frame,
             text="Source",
             command=self.select_source,
-            height=self.button_height,
-            font=("Arial", self.font_size_2),
-            bd=0,
+            style="Normal.TButton",
         )
 
-        self.refresh_button = tk.Button(
+        self.refresh_button = ttk.Button(
             self.bottom_frame,
             text="Refresh",
             command=self.refresh,
-            height=self.button_height,
-            font=("Arial", self.font_size_2),
-            bd=0,
+            style="Normal.TButton",
         )
 
         self.nouns_var = tk.StringVar(value="3")
@@ -273,13 +293,11 @@ class Dashboard:
         self.nouns_combo.set(self.state.nouns)
         self.nouns_combo.bind("<<ComboboxSelected>>", self.on_nouns_change)
 
-        self.close_button = tk.Button(
+        self.close_button = ttk.Button(
             self.bottom_frame,
             text="Close",
             command=self.close,
-            height=self.button_height,
-            font=("Arial", self.font_size_2),
-            bd=0,
+            style="Normal.TButton",
         )
 
         self.select_source_btn.pack(
