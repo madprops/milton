@@ -254,7 +254,9 @@ class Dashboard:
         # Configure the dropdown listbox appearance
         self.root.option_add("*TCombobox*Listbox.background", self.button_color)
         self.root.option_add("*TCombobox*Listbox.foreground", self.button_text)
-        self.root.option_add("*TCombobox*Listbox.selectBackground", self.button_color_hover)
+        self.root.option_add(
+            "*TCombobox*Listbox.selectBackground", self.button_color_hover
+        )
         self.root.option_add("*TCombobox*Listbox.selectForeground", self.button_text)
 
         # Replace the current combobox event handlers with these:
@@ -500,7 +502,7 @@ class Dashboard:
         # Restart thread with new delay
         self.restart_refresh_thread()
 
-        def reset():
+        def reset() -> None:
             self.root.focus_set()
             event.widget.configure(style="Normal.TCombobox")
             event.widget.selection_clear()
