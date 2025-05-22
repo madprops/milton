@@ -233,8 +233,9 @@ class Dashboard:
         combo_style.configure(
             "Normal.TCombobox",
             background=self.button_color,
-            oreground=self.button_text,
+            foreground=self.button_text,  # Fixed the typo from 'oreground' to 'foreground'
             padding=(5, self.button_height * 5),
+            fieldbackground=self.button_color,  # Add this line to fix the issue
             relief="flat",
             borderwidth=0,
             highlightthickness=0,
@@ -249,6 +250,12 @@ class Dashboard:
             borderwidth=0,
             highlightthickness=0,
         )
+
+        # Configure the dropdown listbox appearance
+        self.root.option_add("*TCombobox*Listbox.background", self.button_color)
+        self.root.option_add("*TCombobox*Listbox.foreground", self.button_text)
+        self.root.option_add("*TCombobox*Listbox.selectBackground", self.button_color_hover)
+        self.root.option_add("*TCombobox*Listbox.selectForeground", self.button_text)
 
         # Replace the current combobox event handlers with these:
         def on_combobox_enter(event: Any) -> None:
@@ -492,7 +499,13 @@ class Dashboard:
 
         # Restart thread with new delay
         self.restart_refresh_thread()
-        self.root.focus_set()
+
+        def reset():
+            self.root.focus_set()
+            event.widget.configure(style="Normal.TCombobox")
+            event.widget.selection_clear()
+
+        self.root.after(100, lambda: reset())
         self.save_state()
 
     def on_nouns_change(self, event: Any = None) -> None:
