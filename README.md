@@ -1,0 +1,1 @@
+just point to a directory with images.
