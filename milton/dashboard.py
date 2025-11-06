@@ -254,9 +254,11 @@ class Dashboard:
         # Configure the dropdown listbox appearance
         self.root.option_add("*TCombobox*Listbox.background", self.button_color)
         self.root.option_add("*TCombobox*Listbox.foreground", self.button_text)
+
         self.root.option_add(
             "*TCombobox*Listbox.selectBackground", self.button_color_hover
         )
+
         self.root.option_add("*TCombobox*Listbox.selectForeground", self.button_text)
 
         # Replace the current combobox event handlers with these:
@@ -402,8 +404,21 @@ class Dashboard:
                 # Pass a flag to indicate this was scheduled from background thread
                 self.root.after(0, lambda: self.refresh(from_thread=True))
 
+    def get_default_source(self) -> str:
+        default_dir = Path(__file__).parent / "img" / "birds"
+        return self.state.source or str(default_dir)
+
     def select_source(self) -> None:
-        directory = filedialog.askdirectory(title="Select Source Directory")
+        # Default to <cwd>/img/birds when no source is set
+        try:
+            initial_dir = self.get_default_source()
+        except Exception:
+            # Fallback to root if anything goes wrong resolving default path
+            initial_dir = "/"
+
+        directory = filedialog.askdirectory(
+            title="Select Source Directory", initialdir=initial_dir
+        )
 
         if directory:
             self.state.source = directory
@@ -424,6 +439,9 @@ class Dashboard:
             self.state.source = self.state_json.get("source", "")
             self.state.speed = self.state_json.get("speed", "Normal")
             self.state.nouns = self.state_json.get("nouns", "3")
+
+            if not self.state.source:
+                self.state.source = self.get_default_source()
         except Exception as e:
             self.log(f"Error loading state file: {e}")
 
