@@ -13,7 +13,7 @@ import tkinter as tk
 from PIL import Image, ImageTk  # type: ignore
 
 # Modules
-from state import State
+from .state import State
 
 
 class Dashboard:

@@ -6,7 +6,7 @@ from pathlib import Path
 import tkinter as tk
 
 # Modules
-from dashboard import Dashboard
+from .dashboard import Dashboard
 
 
 def main() -> None:
