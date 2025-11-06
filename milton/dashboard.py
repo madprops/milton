@@ -589,7 +589,9 @@ class Dashboard:
                 new_width = int(max_height * image_aspect)
 
             # Resize the image using LANCZOS for good quality
-            resized_image = pil_image.resize((new_width, new_height), Image.LANCZOS)
+            resized_image = pil_image.resize(
+                (new_width, new_height), Image.Resampling.LANCZOS
+            )
 
             # Create a new image with the frame dimensions and paste the resized image in the center
             final_image = Image.new("RGB", (frame_width, frame_height), self.bg_color)

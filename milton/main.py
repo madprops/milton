@@ -10,7 +10,7 @@ from dashboard import Dashboard
 
 
 def main() -> None:
-    manifest_path = Path("manifest.json")
+    manifest_path = Path("milton/manifest.json")
 
     if manifest_path.exists():
         with manifest_path.open("r", encoding="utf-8") as f:
