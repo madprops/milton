@@ -34,7 +34,7 @@ class Dashboard:
         self.img_width = 300
         self.img_height = 200
         self.stop_refresh = False
-        self.state_file = Path(__file__).parent.parent / Path("state.json")
+        self.state_file = Path(__file__).parent / Path("state.json")
         self.image_padding = 0.8
         self.button_color = "#d9d9d9"
         self.button_color_hover = "#cecece"
@@ -359,7 +359,7 @@ class Dashboard:
         """Read the noun list from file."""
         try:
             # Construct the path to nouns.txt relative to this file's location
-            nouns_path = Path(__file__).parent.parent / "nouns.txt"
+            nouns_path = Path(__file__).parent / "nouns.txt"
 
             with nouns_path.open("r", encoding="utf-8") as f:
                 return [line.strip() for line in f if line.strip()]
