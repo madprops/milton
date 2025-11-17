@@ -39,6 +39,10 @@ class Dashboard:
         self.button_color = "#d9d9d9"
         self.button_color_hover = "#cecece"
         self.button_text = "#000000"
+        self.compact_breakpoint = 520
+        self.bottom_layout_mode: str | None = None
+        self.resize_job: str | None = None
+        self.current_pil_image: Image.Image | None = None
 
         self.root = root
         self.root.configure(bg=self.bg_color)
@@ -50,6 +54,8 @@ class Dashboard:
         self.create_main()
         self.create_image()
         self.create_bottom()
+        self.root.bind("<Configure>", self.on_window_resize)
+        self.root.after_idle(self.handle_responsive_layout)
 
         self.noun_list = self.read_noun_list()
 
@@ -331,23 +337,7 @@ class Dashboard:
             style="Normal.TButton",
         )
 
-        self.select_source_btn.pack(
-            side=tk.LEFT, padx=(10, self.wid_pad_x), pady=self.wid_pad_y
-        )
-
-        self.speed_combo.pack(
-            side=tk.LEFT, padx=(0, self.wid_pad_x), pady=self.wid_pad_y
-        )
-
-        self.nouns_combo.pack(
-            side=tk.LEFT, padx=(0, self.wid_pad_x), pady=self.wid_pad_y
-        )
-
-        self.refresh_button.pack(
-            side=tk.LEFT, padx=(0, self.wid_pad_x), pady=self.wid_pad_y
-        )
-
-        self.close_button.pack(side=tk.RIGHT, padx=(5, 10), pady=self.wid_pad_y)
+        self.layout_bottom_controls("horizontal")
 
     def close(self) -> None:
         """Close the application."""
@@ -567,65 +557,137 @@ class Dashboard:
             self.start_refresh_thread()
 
     def load_image(self, file_path: Path) -> None:
-        """Load and display an image with proper resizing after the window is fully rendered."""
+        """Load an image and trigger rendering so it stays responsive."""
         try:
-            # Store the file path for later use
-            self.pending_image_path = file_path
+            with Image.open(file_path) as pil_image:
+                self.current_pil_image = pil_image.copy()
 
-            # Check if the window is fully rendered
-            if (
-                self.image_frame.winfo_width() <= 1
-                or self.image_frame.winfo_height() <= 1
-            ):
-                # If not, schedule this to run after the window is updated
-                self.root.after(100, lambda: self.load_image(file_path))
-                return
-
-            pil_image = Image.open(file_path)
-            img_width, img_height = pil_image.size
-            frame_width = self.image_frame.winfo_width()
-            frame_height = self.image_frame.winfo_height()
-
-            # Calculate aspect ratios
-            image_aspect = img_width / img_height
-            frame_aspect = frame_width / frame_height
-
-            # Determine resizing dimensions based on aspect ratios
-            if image_aspect > frame_aspect:
-                # Image is wider than the frame, fit to width
-                new_width = frame_width
-                new_height = int(frame_width / image_aspect)
-            else:
-                # Image is taller than the frame, fit to height
-                new_height = frame_height
-                new_width = int(frame_height * image_aspect)
-
-            # Add a margin to ensure bottom controls are visible
-            max_height = int(
-                frame_height * self.image_padding
-            )  # Use only 90% of available height
-
-            if new_height > max_height:
-                new_height = max_height
-                new_width = int(max_height * image_aspect)
-
-            # Resize the image using LANCZOS for good quality
-            resized_image = pil_image.resize(
-                (new_width, new_height), Image.Resampling.LANCZOS
-            )
-
-            # Create a new image with the frame dimensions and paste the resized image in the center
-            final_image = Image.new("RGB", (frame_width, frame_height), self.bg_color)
-
-            x_offset = (frame_width - new_width) // 2
-            y_offset = (frame_height - new_height) // 2
-            final_image.paste(resized_image, (x_offset, y_offset))
-
-            # Convert PIL image to tkinter-compatible photo image
-            tk_image = ImageTk.PhotoImage(final_image)
-
-            # Update the image label
-            self.image_label.configure(image=tk_image)
-            self.current_image = tk_image
+            self.render_current_image()
         except Exception as e:
             self.log(f"Error loading image: {e}")
+
+    def render_current_image(self) -> None:
+        """Render the currently loaded image to match the frame size."""
+        if not self.current_pil_image:
+            return
+
+        frame_width = self.image_frame.winfo_width()
+        frame_height = self.image_frame.winfo_height()
+
+        if frame_width <= 1 or frame_height <= 1:
+            self.root.after(100, self.render_current_image)
+            return
+
+        pil_image = self.current_pil_image
+        img_width, img_height = pil_image.size
+
+        image_aspect = img_width / img_height
+        frame_aspect = frame_width / frame_height
+
+        if image_aspect > frame_aspect:
+            new_width = frame_width
+            new_height = int(frame_width / image_aspect)
+        else:
+            new_height = frame_height
+            new_width = int(frame_height * image_aspect)
+
+        max_height = int(frame_height * self.image_padding)
+
+        if new_height > max_height:
+            new_height = max_height
+            new_width = int(max_height * image_aspect)
+
+        resized_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        final_image = Image.new("RGB", (frame_width, frame_height), self.bg_color)
+
+        x_offset = (frame_width - new_width) // 2
+        y_offset = (frame_height - new_height) // 2
+        final_image.paste(resized_image, (x_offset, y_offset))
+
+        tk_image = ImageTk.PhotoImage(final_image)
+        self.image_label.configure(image=tk_image)
+        self.current_image = tk_image
+
+    def on_window_resize(self, event: Any) -> None:
+        """Throttle resize handling to keep UI responsive."""
+        if event.widget is not self.root:
+            return
+
+        self.schedule_resize_update()
+
+    def schedule_resize_update(self) -> None:
+        if self.resize_job:
+            self.root.after_cancel(self.resize_job)
+
+        self.resize_job = self.root.after(150, self.handle_responsive_layout)
+
+    def handle_responsive_layout(self) -> None:
+        self.resize_job = None
+        self.adjust_bottom_layout()
+        self.render_current_image()
+
+    def adjust_bottom_layout(self) -> None:
+        width = self.root.winfo_width()
+
+        if width <= 0:
+            return
+
+        layout_mode = "vertical" if width < self.compact_breakpoint else "horizontal"
+        self.layout_bottom_controls(layout_mode)
+
+    def layout_bottom_controls(self, mode: str) -> None:
+        if mode == self.bottom_layout_mode:
+            return
+
+        self.bottom_layout_mode = mode
+
+        for widget in self.bottom_frame.winfo_children():
+            widget.pack_forget()
+
+        if mode == "vertical":
+            self.pack_bottom_vertical()
+        else:
+            self.pack_bottom_horizontal()
+
+    def pack_bottom_horizontal(self) -> None:
+        self.select_source_btn.pack(
+            side=tk.LEFT,
+            padx=(10, self.wid_pad_x),
+            pady=self.wid_pad_y,
+        )
+
+        self.speed_combo.pack(
+            side=tk.LEFT,
+            padx=(0, self.wid_pad_x),
+            pady=self.wid_pad_y,
+        )
+
+        self.nouns_combo.pack(
+            side=tk.LEFT,
+            padx=(0, self.wid_pad_x),
+            pady=self.wid_pad_y,
+        )
+
+        self.refresh_button.pack(
+            side=tk.LEFT,
+            padx=(0, self.wid_pad_x),
+            pady=self.wid_pad_y,
+        )
+
+        self.close_button.pack(
+            side=tk.RIGHT,
+            padx=(5, 10),
+            pady=self.wid_pad_y,
+        )
+
+    def pack_bottom_vertical(self) -> None:
+        widgets = [
+            self.select_source_btn,
+            self.speed_combo,
+            self.nouns_combo,
+            self.refresh_button,
+            self.close_button,
+        ]
+
+        for widget in widgets:
+            widget.pack(fill="x", padx=10, pady=4)
