@@ -83,13 +83,20 @@ class Dashboard:
         self.main_frame = tk.Frame(self.root, bg=self.bg_color)
 
         self.top_frame = tk.Frame(self.main_frame, bg=self.bg_color)
-        self.top_frame.pack(fill="x", pady=(10, 0))  # Increased padding
+        # Keep the top controls anchored at the top
+        self.top_frame.pack(side=tk.TOP, fill="x", pady=(10, 0))  # Increased padding
 
         self.middle_frame = tk.Frame(self.main_frame, bg=self.bg_color)
-        self.middle_frame.pack(fill="both", expand=True)
+        # Middle area should take remaining space
+        # Pack after top and bottom so it shrinks first on window resize
+        # (we pack it after bottom_frame is set up below)
 
         self.bottom_frame = tk.Frame(self.main_frame, bg=self.bg_color)
-        self.bottom_frame.pack(fill="x", pady=(0, 10))
+        # Anchor bottom controls to the bottom so they remain visible when shrinking
+        self.bottom_frame.pack(side=tk.BOTTOM, fill="x", pady=(0, 10))
+
+        # Now pack the middle to fill the remaining space between top and bottom
+        self.middle_frame.pack(side=tk.TOP, fill="both", expand=True)
 
         self.main_frame.pack(fill="both", expand=True)
         self.main_frame.pack_propagate(False)
