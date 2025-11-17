@@ -12,4 +12,4 @@ fi
 
 # Run the main script
 echo "Starting milton..."
-venv/bin/python milton/main.py
+venv/bin/python -m milton.main
